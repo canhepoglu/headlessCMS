@@ -1,0 +1,103 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated"
+}
+
+datasource db {
+  provider = "postgresql"
+  // url artık prisma.config.ts dosyasında yönetiliyor
+}
+
+model User {
+  id         String   @id @default(uuid())
+  name       String
+  email      String   @unique
+  password   String
+  role       UserRole
+  created_at DateTime @default(now())
+  entries    Entry[]
+}
+
+enum UserRole {
+  ADMIN
+  EDITOR
+  AUTHOR
+}
+
+model ContentType {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  created_at  DateTime @default(now())
+  fields      Field[]
+  entries     Entry[]
+}
+
+model Field {
+  id             String   @id @default(uuid())
+  contentTypeId  String
+  name           String
+  slug           String
+  type           String
+  required       Boolean
+  options        Json?
+  order          Int
+  contentType    ContentType @relation(fields: [contentTypeId], references: [id])
+  entryValues    EntryValue[]
+}
+
+model Entry {
+  id             String   @id @default(uuid())
+  contentTypeId  String
+  status         EntryStatus
+  created_by     String
+  created_at     DateTime @default(now())
+  published_at   DateTime?
+  contentType    ContentType @relation(fields: [contentTypeId], references: [id])
+  user           User        @relation(fields: [created_by], references: [id])
+  entryValues    EntryValue[]
+}
+
+enum EntryStatus {
+  draft
+  published
+}
+
+model EntryValue {
+  id          String   @id @default(uuid())
+  entryId     String
+  fieldId     String
+  value_text  String?
+  value_number Float?
+  value_json  Json?
+  value_boolean Boolean?
+  entry       Entry    @relation(fields: [entryId], references: [id])
+  field       Field    @relation(fields: [fieldId], references: [id])
+}
+
+model Media {
+  id         String   @id @default(uuid())
+  url        String
+  mime_type  String
+  size       Int
+  alt        String?
+  created_at DateTime @default(now())
+}
+
+model Category {
+  id    String @id @default(uuid())
+  name  String
+  slug  String @unique
+}
+
+model Tag {
+  id    String @id @default(uuid())
+  name  String
+  slug  String @unique
+}
